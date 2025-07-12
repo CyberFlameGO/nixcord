@@ -85,13 +85,13 @@ let
   versions = {
     linux = {
       stable = "0.0.101";
-      ptb = "0.0.151";
+      ptb = "0.0.152";
       canary = "0.0.717";
       development = "0.0.83";
     };
     darwin = {
       stable = "0.0.353";
-      ptb = "0.0.181";
+      ptb = "0.0.182";
       canary = "0.0.823";
       development = "0.0.96";
     };
@@ -105,7 +105,7 @@ let
       };
       ptb = fetchurl {
         url = "https://ptb.dl2.discordapp.net/apps/linux/${versions.linux.ptb}/discord-ptb-${versions.linux.ptb}.tar.gz";
-        hash = "sha256-7fQFCPUj59c/OfuNa4RDxGexAKZXLL7M+7n36WE5qDg=";
+        hash = "sha256-GbLEAu6gchwkkupU6k6i7bpdMVnCqB74HDYxyTt3J/w=";
       };
       canary = fetchurl {
         url = "https://canary.dl2.discordapp.net/apps/linux/${versions.linux.canary}/discord-canary-${versions.linux.canary}.tar.gz";
@@ -123,7 +123,7 @@ let
       };
       ptb = fetchurl {
         url = "https://ptb.dl2.discordapp.net/apps/osx/${versions.darwin.ptb}/DiscordPTB.dmg";
-        hash = "sha256-Q153X08crRpXZMMgNDYbADHnL7MiBPCakJxQe8Pl0Uo=";
+        hash = "sha256-yL3NSjY3W1w1gfw7w7zdCgVcov18PtrT8RmcwgQLA6U=";
       };
       canary = fetchurl {
         url = "https://canary.dl2.discordapp.net/apps/osx/${versions.darwin.canary}/DiscordCanary.dmg";
@@ -282,12 +282,12 @@ let
                   local platform="$1"
                   local branch="$2"
                   local new_hash="$3"
-                  
+
                   if [[ -z "$platform" || -z "$branch" || -z "$new_hash" ]]; then
                     echo "Error: update_hash_perl requires platform, branch, and new_hash" >&2
                     return 1
                   fi
-                  
+
                   PLATFORM="$platform" BRANCH="$branch" NEWHASH="$new_hash" \
                   perl -0777 -i -pe '
                     my $platform = $ENV{"PLATFORM"};
@@ -311,7 +311,7 @@ let
 
                 for BRANCH in "''${BRANCHES[@]}"; do
                   echo "Processing branch: $BRANCH"
-                  
+
                   # LINUX
                   echo "  Fetching Linux URL for $BRANCH..."
                   if ! linux_url=$(timeout 30 curl -sI -L -o /dev/null -w '%{url_effective}' "https://discord.com/api/download/$BRANCH?platform=linux&format=tar.gz" 2>/dev/null); then
@@ -319,25 +319,25 @@ let
                     failed_branches+=("$BRANCH-linux")
                     continue
                   fi
-                  
+
                   if ! linux_version=$(echo "$linux_url" | grep -oP 'apps/linux/\K([0-9]+\.[0-9]+\.[0-9]+)'); then
                     echo "  Warning: Could not extract Linux version for $BRANCH from URL: $linux_url" >&2
                     failed_branches+=("$BRANCH-linux")
                     continue
                   fi
-                  
+
                   echo "  Found Linux version: $linux_version"
-                  
+
                   echo "  Fetching Linux hash..."
                   if ! linux_hash=$(timeout 120 nix-prefetch-url --type sha256 "$linux_url" 2>/dev/null); then
                     echo "  Warning: Failed to fetch Linux hash for $BRANCH" >&2
                     failed_branches+=("$BRANCH-linux")
                     continue
                   fi
-                  
+
                   if ! linux_sri_hash=$(nix hash convert --to sri --hash-algo sha256 "$linux_hash" 2>/dev/null); then
                     echo "  Warning: Failed to convert Linux hash to SRI for $BRANCH" >&2
-                    failed_branches+=("$BRANCH-linux")  
+                    failed_branches+=("$BRANCH-linux")
                     continue
                   fi
 
@@ -348,22 +348,22 @@ let
                     failed_branches+=("$BRANCH-darwin")
                     continue
                   fi
-                  
+
                   if ! darwin_version=$(echo "$darwin_url" | grep -oP 'apps/osx/\K([0-9]+\.[0-9]+\.[0-9]+)'); then
                     echo "  Warning: Could not extract Darwin version for $BRANCH from URL: $darwin_url" >&2
                     failed_branches+=("$BRANCH-darwin")
                     continue
                   fi
-                  
+
                   echo "  Found Darwin version: $darwin_version"
-                  
+
                   echo "  Fetching Darwin hash..."
                   if ! darwin_hash=$(timeout 120 nix-prefetch-url --type sha256 "$darwin_url" 2>/dev/null); then
                     echo "  Warning: Failed to fetch Darwin hash for $BRANCH" >&2
                     failed_branches+=("$BRANCH-darwin")
                     continue
                   fi
-                  
+
                   if ! darwin_sri_hash=$(nix hash convert --to sri --hash-algo sha256 "$darwin_hash" 2>/dev/null); then
                     echo "  Warning: Failed to convert Darwin hash to SRI for $BRANCH" >&2
                     failed_branches+=("$BRANCH-darwin")
@@ -372,7 +372,7 @@ let
 
                   # Update versions
                   echo "  Updating versions in file..."
-                  
+
                   # Linux version
                   if ! BRANCH="$BRANCH" LINUX_VERSION="$linux_version" perl -i -pe '
                     my $branch = $ENV{"BRANCH"};
@@ -385,7 +385,7 @@ let
                     failed_branches+=("$BRANCH-linux-version")
                     continue
                   fi
-                  
+
                   # Darwin version
                   if ! BRANCH="$BRANCH" DARWIN_VERSION="$darwin_version" perl -i -pe '
                     my $branch = $ENV{"BRANCH"};
@@ -406,7 +406,7 @@ let
                     failed_branches+=("$BRANCH-linux-hash")
                     continue
                   fi
-                  
+
                   if ! update_hash_perl "x86_64-darwin" "$BRANCH" "$darwin_sri_hash"; then
                     echo "  Error: Failed to update Darwin hash for $BRANCH" >&2
                     failed_branches+=("$BRANCH-darwin-hash")
